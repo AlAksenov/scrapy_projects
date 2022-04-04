@@ -1,5 +1,15 @@
-from pymongo import MongoClient
+# Define your item pipelines here
+#
+# Don't forget to add your pipeline to the ITEM_PIPELINES setting
+# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
+
+# useful for handling different item types with a single interface
+from itemadapter import ItemAdapter
+from pymongo import MongoClient
+from scrapy.pipelines.images import ImagesPipeline
+import scrapy
+from pymongo.errors import DuplicateKeyError
 
 class InstaparserPipeline:
     def __init__(self):
@@ -7,11 +17,36 @@ class InstaparserPipeline:
         self.mongo_base = client.instagram
 
     def process_item(self, item, spider):
+        print(item['photo'])
         collection = self.mongo_base['instagram']
-        collection.insert_one(item)  # Добавляем в базу данных
-        print('Added to DB')
+        try:
+            collection.insert_one(item)  # Добавляем в базу данных
+            print('Added to my collections')
+        except DuplicateKeyError:
+            print(f'Post {item["_id"]} is already exist')
         return item
 
+
+class InstaPhotosPipline(ImagesPipeline):
+    def get_media_requests(self, item, info):
+        img_req = item['photo']
+        print(img_req)
+        if img_req:
+            try:
+                yield scrapy.Request(img_req, meta=item)
+            except Exception as e:
+                print(e)
+
+    def file_path(self, request, item, response=None, info=None):
+        img_path = item['user_id']
+        url = request.url.split('?')
+        path = img_path + '/' + url[0].split('/')[-1]
+        return path
+
+
+    def item_completed(self, results, item, info):
+        item['photo'] = [itm[1] for itm in results if itm[0]]
+        return item
 
 # # в info содержиться информация о том, сколько прилетело фотографий, сколько скачано, сколько стоит на очереди
 # class LeroymerlinPhotosPipeline(ImagesPipeline):

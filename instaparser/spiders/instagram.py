@@ -13,16 +13,17 @@ class InstagramSpider(scrapy.Spider):
     name = 'instagram'
     allowed_domains = ['instagram.com']
     start_urls = ['https://instagram.com/']
-    insta_login = '***'
-    insta_pwd = '***'
+    insta_login = 'mambatropicomango'
+    insta_pwd = '#PWD_INSTAGRAM_BROWSER:10:1649099224:AYBQAI3EHNlLGpBEEbTgZzTtHeLG8q2oKnEeTa2gNAAG6NBDnoYZ+mo0RqDFMEDhMrlkAtrKBVBRpt+nvr6CaZ/rWZ9Hd2LfWPq3mCZ3cwZlnn9LlvLJydLfXFVb1DnIwFJQC6G/N8Hg46HRAm+4buQ='
     inst_login_link = 'https://www.instagram.com/accounts/login/ajax/'
-    # parse_user = 'kmemescluster'  # Пользователь, у которого собираем посты. Можно указать список
-    parse_users = ['nine.three.photography', 'photochu']  # Пользователи, у которых собираем follower/following
+    # parse_user = 'booferaxe'  # Пользователь, у которого собираем посты. Можно указать список
+    parse_users = ['booferaxe']  # Пользователи, у которых собираем follower/following
 
     graphql_url = 'https://www.instagram.com/graphql/query/?'
-    posts_hash = 'eddbde960fed6bde675388aac39a3657'  # hash для получения данных о постах с главной страницы
-    #followers_hash = 'c76146de99bb02f6415203be841dd25a' # hash для получения подписчиков
-    #following_hash = 'd04b0a864b4b54837c0d870b0e77e076' # hash для получения подписок
+    posts_hash = '396983faee97f4b49ccbe105b4daf7a0'  # hash для получения данных о постах с главной страницы
+
+    # followers_hash = 'c76146de99bb02f6415203be841dd25a' # hash для получения подписчиков
+    # following_hash = 'd04b0a864b4b54837c0d870b0e77e076' # hash для получения подписок
 
     def parse(self, response: HtmlResponse):  # Первый запрос на стартовую страницу
         csrf_token = self.fetch_csrf_token(response.text)  # csrf token забираем из html
@@ -37,7 +38,7 @@ class InstagramSpider(scrapy.Spider):
     def user_parse(self, response: HtmlResponse):
         j_body = json.loads(response.text)  # Преобразуем респонс в джейсон
         if j_body['authenticated']:  # Проверяем ответ после авторизации, чтобы понять удачно ли прошла авторизация
-            for parse_user in self.parse_users:     # Перебираем аккаунты пользователей
+            for parse_user in self.parse_users:  # Перебираем аккаунты пользователей
                 yield response.follow(
                     # т.к. скрапи прекрасно работает с относительными ссылками - этого достаточно для перехода
                     f'/{parse_user}',
@@ -51,27 +52,37 @@ class InstagramSpider(scrapy.Spider):
 
     # принимаем username из предыдущего метода user_parse и
     # на руках будет иметь имя пользователя с которым работаем в данном методе
-    # def user_data_parse(self, response: HtmlResponse, username):
-    #     user_id = self.fetch_user_id(response.text, username)  # Получаем id пользователя методом fetch_user_id
-    #     variables = {'id': user_id,  # Формируем словарь для передачи даных в запрос
-    #                  'first': 12}  # 12 постов. Можно больше (макс. 50)
-    #
-    #     # graphql+query_hash: Формируем ссылку для получения .  urlencode кодирует параметры
-    #     url_followers = f'{self.graphql_url}query_hash={self.followers_hash}&{urlencode(variables)}'
-    #     url_following = f'{self.graphql_url}query_hash={self.following_hash}&{urlencode(variables)}'
-    #     yield response.follow(
-    #         url_followers,
-    #         callback=self.followers_parse,
-    #         cb_kwargs={'username': username,
-    #                    'user_id': user_id,
-    #                    'variables': deepcopy(variables)})  # variables ч/з deepcopy во избежание гонок
-    #
-    #     yield response.follow(
-    #         url_following,
-    #         callback=self.following_parse,
-    #         cb_kwargs={'username': username,
-    #                    'user_id': user_id,
-    #                    'variables': deepcopy(variables)})  # variables ч/з deepcopy во избежание гонок
+    def user_data_parse(self, response: HtmlResponse, username):
+        user_id = self.fetch_user_id(response.text, username)  # Получаем id пользователя методом fetch_user_id
+        variables = {'id': user_id,  # Формируем словарь для передачи даных в запрос
+                     'first': 12}  # 12 постов. Можно больше (макс. 50)
+
+        url_posts = f'{self.graphql_url}query_hash={self.posts_hash}&{urlencode(variables)}'
+
+        # graphql+query_hash: Формируем ссылку для получения .  urlencode кодирует параметры
+        # url_followers = f'{self.graphql_url}query_hash={self.followers_hash}&{urlencode(variables)}'
+        # url_following = f'{self.graphql_url}query_hash={self.following_hash}&{urlencode(variables)}'
+        # yield response.follow(
+        #     url_followers,
+        #     callback=self.followers_parse,
+        #     cb_kwargs={'username': username,
+        #                'user_id': user_id,
+        #                'variables': deepcopy(variables)})  # variables ч/з deepcopy во избежание гонок
+        #
+        # yield response.follow(
+        #     url_following,
+        #     callback=self.following_parse,
+        #     cb_kwargs={'username': username,
+        #                'user_id': user_id,
+        #                'variables': deepcopy(variables)})  # variables ч/з deepcopy во избежание гонок
+
+        # собираем посты
+        yield response.follow(
+            url_posts,
+            callback=self.user_posts_parse,
+            cb_kwargs={'username': username,
+                       'user_id': user_id,
+                       'variables': deepcopy(variables)})  # variables ч/з deepcopy во избежание гонок
 
     # собираем посты
     def user_posts_parse(self, response: HtmlResponse, username, user_id,
@@ -95,9 +106,10 @@ class InstagramSpider(scrapy.Spider):
                 user_id=user_id,
                 photo=post['node']['display_url'],
                 likes=post['node']['edge_media_preview_like']['count'],
+                _id=post['node']['id'],
                 post=post['node']  # на всякий на будущее закидываем всю ноду в post, вдруг понадобятся данные
             )
-        yield item  # В пайплайн
+            yield item  # В пайплайн
 
     # # собираем подписчиков
     # def followers_parse(self, response: HtmlResponse, username, user_id, variables):
