@@ -80,3 +80,8 @@ elif salary[0].replace('\xa0', '').isdigit():
 print(salary_min)
 print(salary_max)
 print(currency)
+
+
+a = 'https://scontent-bos3-1.cdninstagram.com/v/t51.2885-15/277366355_655660869030170_2718908737345568088_n.jpg?stp=dst-jpg_e35_p1080x1080&_nc_ht=scontent-bos3-1.cdninstagram.com&_nc_cat=102&_nc_ohc=dL6WSzDdEWEAX-cCYA0&edm=APU89FABAAAA&ccb=7-4&oh=00_AT8DSpevoC_dLwAf1i-7_vl720g3Y1Z0AMdv-Lytut-JKg&oe=6252E7DC&_nc_sid=86f79a'
+b = a.split('?')
+print(b[0].split('/')[-1])
