@@ -8,16 +8,19 @@ from itemloaders.processors import MapCompose, Compose, TakeFirst
 
 class InstaparserItem(scrapy.Item):
     _id = scrapy.Field()
-    follower_id = scrapy.Field()
-    following_id = scrapy.Field()
     likes = scrapy.Field()
     post = scrapy.Field()
     username = scrapy.Field()
-    #username_follower = scrapy.Field()
-    #username_following = scrapy.Field()
-    #full_name = scrapy.Field()
     photo = scrapy.Field()
-    user_attribute = scrapy.Field()
-    full_info = scrapy.Field()
     user_id = scrapy.Field()
-    node = scrapy.Field()
+
+class InstaparserFollowItem(scrapy.Item):
+    _id = scrapy.Field()
+    username_follow = scrapy.Field()
+    photo_follow = scrapy.Field()
+    fullname_follow = scrapy.Field()
+    username = scrapy.Field()
+    follow_type = scrapy.Field()
+    follow_user_id = scrapy.Field()
+
+
